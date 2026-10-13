@@ -85,6 +85,18 @@ You answer a few questions (disk type, desktop environment, language, and so on)
 
 Follow the prompts, read the summary carefully, and type `YES` to start. When it finishes, remove the USB drive and reboot.
 
+## After the install: Gentoo Guides
+
+New to Gentoo? The [`gentoo-guides/`](gentoo-guides/) folder has beginner guides and helper scripts for your first days:
+
+- Updating the system (the `pacman -Syu` equivalent) and installing handy tools
+- An Arch-to-Gentoo cheat sheet for getting your usual apps back
+- Flatpak and Flathub, the GURU overlay (Gentoo's AUR-like repo), and binary packages
+- Installing and troubleshooting Sober and Vinegar (Roblox on Linux)
+- A troubleshooting guide for common Portage errors
+
+Start with the [Gentoo Guides index](gentoo-guides/README.md).
+
 ## Tips
 
 - **Use a different mirror:** `GENTOO_MIRROR=https://mirror.example.org/gentoo ./gentoo-installation-script.sh`
@@ -93,7 +105,7 @@ Follow the prompts, read the summary carefully, and type `YES` to start. When it
 - **Licenses:** the script sets `ACCEPT_LICENSE="*"` so firmware and binary packages install without prompts. Tighten it in `/etc/portage/make.conf` if you prefer.
 - **Wayland and X11 keyboard layout:** the script sets the console keymap. Set your desktop layout in the desktop's settings after first login.
 
-## Limitations (v0.1.0)
+## Limitations (v0.1.1)
 
 - amd64 only, GRUB only, no encryption or LVM, and no dual-boot detection.
 - The EFI fallback path (`EFI/BOOT/BOOTX64.EFI`) is also written so the system boots on firmware that ignores NVRAM entries. This may replace another OS's fallback loader.

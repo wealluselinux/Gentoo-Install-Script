@@ -13,7 +13,7 @@
 
 set -Eeo pipefail
 
-VERSION="0.1.0"
+VERSION="0.1.1"
 MNT="/mnt/gentoo"
 ARCH="amd64"
 MIRROR="${GENTOO_MIRROR:-https://distfiles.gentoo.org}"
@@ -540,7 +540,8 @@ sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64/
 EOF
     fi
     getuto || echo "getuto failed; continuing without signature setup."
-    echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"' >> /etc/portage/make.conf
+    echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /etc/portage/make.conf
+    echo 'EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg"' >> /etc/portage/make.conf
 fi
 
 step "Portage package settings"
@@ -567,7 +568,7 @@ cat > /etc/hosts <<EOF
 127.0.0.1   localhost $HOST_NAME
 ::1         localhost $HOST_NAME
 EOF
-set +u; source /etc/profile; set -u 2>/dev/null || true
+source /etc/profile
 
 step "Installing GRUB and installkernel"
 emerge -q sys-boot/grub sys-kernel/installkernel
