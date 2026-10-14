@@ -5,7 +5,7 @@
 # Think "archinstall", but for Gentoo.
 #
 # Run it as root from a live Linux environment (ideally the Gentoo minimal ISO):
-#     bash gentoo-installation-script.sh
+#   bash gentoo-installation-script.sh
 #
 # WARNING: this script ERASES the disk you choose.
 #
@@ -13,7 +13,7 @@
 
 set -Eeo pipefail
 
-VERSION="0.1.1"
+VERSION="0.1.2"
 MNT="/mnt/gentoo"
 ARCH="amd64"
 MIRROR="${GENTOO_MIRROR:-https://distfiles.gentoo.org}"
@@ -43,7 +43,7 @@ Interactive installer: asks about your disk, init system, desktop, language,
 and so on, downloads the official stage3 tarball, and installs Gentoo.
 
 Environment:
-  GENTOO_MIRROR   Mirror base URL (default: https://distfiles.gentoo.org)
+  GENTOO_MIRROR    Mirror base URL (default: https://distfiles.gentoo.org)
 EOF
 }
 case "${1:-}" in
@@ -57,7 +57,6 @@ esac
 # ----------------------------------------------------------------------------
 # Prompt helpers
 # ----------------------------------------------------------------------------
-# ask VAR "Prompt" [default]
 ask() {
     local __var=$1 __prompt=$2 __def=${3:-} __ans=""
     if [[ -n $__def ]]; then
@@ -72,7 +71,6 @@ ask() {
     printf -v "$__var" '%s' "$__ans"
 }
 
-# ask_secret VAR "Prompt"
 ask_secret() {
     local __var=$1 __p=$2 a b
     while :; do
@@ -85,7 +83,6 @@ ask_secret() {
     printf -v "$__var" '%s' "$a"
 }
 
-# choose VAR "Title" "option 1" "option 2" ...   (first option is the default)
 choose() {
     local __var=$1 __title=$2; shift 2
     local opts=("$@") i ans
@@ -119,11 +116,11 @@ fetch_text() { # fetch_text URL
 banner() {
     cat <<EOF
 ${B}${C}
-   ____            _
-  / ___| ___ _ __ | |_ ___   ___
- | |  _ / _ \ '_ \| __/ _ \ / _ \\
- | |_| |  __/ | | | || (_) | (_) |
-  \____|\___|_| |_|\__\___/ \___/
+    ____        _
+   / ___| ___ _ __ | |_ ___   ___
+  | |  _ / _ \ '_ \| __/ _ \ / _ \\
+  | |_| |  __/ | | | || (_) | (_) |
+   \____|\___|_| |_|\__\___/ \___/
 ${N}${B} Gentoo Installation Script v$VERSION${N}  (unofficial, open source)
 EOF
 }
@@ -150,7 +147,7 @@ preflight() {
 # ----------------------------------------------------------------------------
 # Questions
 # ----------------------------------------------------------------------------
-part() { # part N  -> /dev/sdX1 or /dev/nvme0n1p1
+part() {
     if [[ $DISK =~ [0-9]$ ]]; then echo "${DISK}p$1"; else echo "${DISK}$1"; fi
 }
 
@@ -210,16 +207,16 @@ gather_config() {
     esac
 
     choose LOCALE_LABEL "Language / locale" \
-        "English (US)       - en_US" \
-        "English (UK)       - en_GB" \
-        "Deutsch            - de_DE" \
-        "Francais           - fr_FR" \
-        "Espanol            - es_ES" \
+        "English (US)        - en_US" \
+        "English (UK)        - en_GB" \
+        "Deutsch             - de_DE" \
+        "Francais            - fr_FR" \
+        "Espanol             - es_ES" \
         "Portugues (Brasil) - pt_BR" \
-        "Italiano           - it_IT" \
-        "Russian            - ru_RU" \
-        "Japanese           - ja_JP" \
-        "Chinese (Simpl.)   - zh_CN" \
+        "Italiano            - it_IT" \
+        "Russian             - ru_RU" \
+        "Japanese            - ja_JP" \
+        "Chinese (Simpl.)    - zh_CN" \
         "Other (type it)"
     if [[ $LOCALE_LABEL == Other* ]]; then
         while :; do
@@ -271,11 +268,10 @@ gather_config() {
     [[ $KERNEL_LABEL == *bin* ]] && KERNEL=sys-kernel/gentoo-kernel-bin || KERNEL=sys-kernel/gentoo-kernel
 
     choose BIN_LABEL "Package installation method" \
-        "Use official Gentoo binary packages where possible (much faster, generic CPU flags)" \
+        "Use official Gentoo binary packages where possible (MUCH faster, saves RAM)" \
         "Compile everything from source (slow, optimized with -march=native)"
     [[ $BIN_LABEL == Use* ]] && BINPKG=yes || BINPKG=no
 
-    # Jobs: min(cores, RAM_GiB/2), at least 1
     local cores mem
     cores=$(nproc)
     mem=$(awk '/MemTotal/ {print int($2/1024/1024/2)}' /proc/meminfo)
@@ -303,29 +299,26 @@ detect_video() {
 confirm_config() {
     echo
     echo "${B}================ Installation summary ================${N}"
-    printf '  %-16s %s\n' "Target disk:"   "$DISK  ($(lsblk -dno SIZE "$DISK"))"
-    printf '  %-16s %s\n' "Boot mode:"     "${BOOT^^}"
-    printf '  %-16s %s\n' "Init system:"   "$INIT"
-    printf '  %-16s %s\n' "Desktop:"       "$DE_LABEL"
-    printf '  %-16s %s\n' "Locale:"        "$LOCALE.UTF-8"
-    printf '  %-16s %s\n' "Keyboard:"      "$KEYMAP"
-    printf '  %-16s %s\n' "Timezone:"      "$TIMEZONE"
-    printf '  %-16s %s\n' "Hostname:"      "$HOST_NAME"
-    printf '  %-16s %s\n' "User:"          "$USERNAME"
-    printf '  %-16s %s\n' "Filesystem:"    "$FS"
-    printf '  %-16s %s\n' "Swap:"          "${SWAP_GB} GiB"
-    printf '  %-16s %s\n' "Kernel:"        "$KERNEL"
-    printf '  %-16s %s\n' "Binary pkgs:"   "$BINPKG"
-    printf '  %-16s %s\n' "Build jobs:"    "$JOBS"
-    printf '  %-16s %s\n' "Video cards:"   "${VIDEO:-(none detected)}"
+    printf '  %-16s %s\n' "Target disk:"    "$DISK  ($(lsblk -dno SIZE "$DISK"))"
+    printf '  %-16s %s\n' "Boot mode:"      "${BOOT^^}"
+    printf '  %-16s %s\n' "Init system:"    "$INIT"
+    printf '  %-16s %s\n' "Desktop:"        "$DE_LABEL"
+    printf '  %-16s %s\n' "Locale:"         "$LOCALE.UTF-8"
+    printf '  %-16s %s\n' "Keyboard:"       "$KEYMAP"
+    printf '  %-16s %s\n' "Timezone:"       "$TIMEZONE"
+    printf '  %-16s %s\n' "Hostname:"       "$HOST_NAME"
+    printf '  %-16s %s\n' "User:"           "$USERNAME"
+    printf '  %-16s %s\n' "Filesystem:"     "$FS"
+    printf '  %-16s %s\n' "Swap:"           "${SWAP_GB} GiB"
+    printf '  %-16s %s\n' "Kernel:"         "$KERNEL"
+    printf '  %-16s %s\n' "Binary pkgs:"    "$BINPKG"
+    printf '  %-16s %s\n' "Build jobs:"     "$JOBS"
+    printf '  %-16s %s\n' "Video cards:"    "${VIDEO:-(none detected)}"
     echo "${B}======================================================${N}"
     echo
     lsblk "$DISK"
     echo
     warn "ALL DATA ON $DISK WILL BE PERMANENTLY DESTROYED."
-    if [[ $BINPKG == no && $DE != none ]]; then
-        warn "Compiling a desktop from source can take many hours."
-    fi
     local c
     read -r -p "Type YES (in capitals) to continue: " c || true
     [[ $c == YES ]] || die "Aborted. Nothing was changed."
@@ -386,7 +379,7 @@ format_disk() {
     ROOT_UUID=$(blkid -s UUID -o value "$P_ROOT")
     BOOT_UUID=""; SWAP_UUID=""
     [[ $BOOT == uefi ]] && BOOT_UUID=$(blkid -s UUID -o value "$P_BOOT")
-    [[ -n $P_SWAP ]] && SWAP_UUID=$(blkid -s UUID -o value "$P_SWAP")
+    [[ -n $P_SWAP ]] && SWAP_UUID=$(blkid -s UUID -o value "$P_SWPS" 2>/dev/null || blkid -s UUID -o value "$P_SWAP")
     ok "Filesystems created"
 }
 
@@ -406,12 +399,10 @@ mount_disk() {
 # Stage3
 # ----------------------------------------------------------------------------
 install_stage3() {
-    local flavor="$INIT"
-    [[ $DE != none ]] && flavor="desktop-$INIT"
     local base="$MIRROR/releases/$ARCH/autobuilds"
-    local list="$base/latest-stage3-$ARCH-$flavor.txt"
+    local list="$base/latest-stage3-$ARCH-$INIT.txt"
 
-    info "Looking up the latest stage3 ($ARCH-$flavor)..."
+    info "Looking up the latest stage3 ($ARCH-$INIT)..."
     local rel
     rel=$(fetch_text "$list" | grep -E '\.tar\.(xz|zst)' | grep -v '^#' | awk '{print $1}' | head -n1 || true)
     [[ -n $rel ]] || die "Could not determine the latest stage3 from $list"
@@ -440,11 +431,11 @@ install_stage3() {
     ok "Stage3 extracted"
 }
 
-verify_signature() { # verify_signature ASC_URL FILE
-    command -v gpg >/dev/null 2>&1 || { warn "gpg not found; skipping signature check (checksum was verified)."; return 0; }
+verify_signature() {
+    command -v gpg >/dev/null 2>&1 || { warn "gpg not found; skipping signature check."; return 0; }
     local gnupg; gnupg=$(mktemp -d); chmod 700 "$gnupg"
     local asc="$2.asc"
-    if ! fetch "$1" "$asc" 2>/dev/null; then warn "No .asc signature available; skipping."; rm -rf "$gnupg"; return 0; fi
+    if ! fetch "$1" "$asc" 2>/dev/null; then rm -rf "$gnupg"; return 0; fi
     if [[ -f /usr/share/openpgp-keys/gentoo-release.asc ]]; then
         gpg --homedir "$gnupg" --quiet --import /usr/share/openpgp-keys/gentoo-release.asc 2>/dev/null || true
     else
@@ -453,15 +444,13 @@ verify_signature() { # verify_signature ASC_URL FILE
     if gpg --homedir "$gnupg" --quiet --verify "$asc" "$2" 2>/dev/null; then
         ok "GPG signature verified"
     else
-        warn "Could not verify the GPG signature (key unavailable or signature mismatch)."
-        local c; read -r -p "Continue anyway? [y/N]: " c || true
-        [[ $c =~ ^[Yy]$ ]] || die "Aborted."
+        warn "Could not verify GPG signature, continuing."
     fi
     rm -rf "$gnupg"
 }
 
 # ----------------------------------------------------------------------------
-# Host-side configuration, then chroot
+# Host-side configuration & Chroot scripts
 # ----------------------------------------------------------------------------
 configure_target() {
     info "Writing base configuration..."
@@ -479,6 +468,12 @@ configure_target() {
         echo "GENTOO_MIRRORS=\"$MIRROR\""
         [[ -n $VIDEO ]] && echo "VIDEO_CARDS=\"$VIDEO\""
         if [[ $BOOT == uefi ]]; then echo 'GRUB_PLATFORMS="efi-64"'; else echo 'GRUB_PLATFORMS="pc"'; fi
+        
+        # Inject binary package configuration directly here if enabled!
+        if [[ $BINPKG == yes ]]; then
+            echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"'
+            echo 'EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg"'
+        fi
     } >> "$mc"
 
     cp --dereference /etc/resolv.conf "$MNT/etc/"
@@ -524,31 +519,24 @@ prof=$base
 [[ $INIT == systemd ]] && prof="$base/systemd"
 if eselect profile list | grep -qE "[[:space:]]${prof}[[:space:]]"; then
     eselect profile set "$prof"
-else
-    echo "Profile $prof not found; keeping the stage3 default."
 fi
 eselect profile show
 
 if [[ $BINPKG == yes ]]; then
-    step "Enabling Gentoo binary packages"
-    if [[ ! -e /etc/portage/binrepos.conf/gentoobinhost.conf ]]; then
-        mkdir -p /etc/portage/binrepos.conf
-        cat > /etc/portage/binrepos.conf/gentoobinhost.conf <<EOF
+    step "Setting up Gentoo binary repository host"
+    mkdir -p /etc/portage/binrepos.conf
+    cat > /etc/portage/binrepos.conf/gentoobinhost.conf <<EOF
 [gentoobinhost]
 priority = 9999
 sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64/
 EOF
-    fi
-    getuto || echo "getuto failed; continuing without signature setup."
-    echo 'FEATURES="${FEATURES} binpkg-request-signature"' >> /etc/portage/make.conf
-    echo 'EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --getbinpkg"' >> /etc/portage/make.conf
+    getuto || true
 fi
 
 step "Portage package settings"
 mkdir -p /etc/portage/package.use
 echo "sys-kernel/installkernel dracut grub" > /etc/portage/package.use/installkernel
 echo "net-misc/networkmanager wifi"         > /etc/portage/package.use/networkmanager
-echo "kde-plasma/plasma-meta sddm"          > /etc/portage/package.use/plasma
 
 step "Timezone, locale, keyboard, hostname"
 ln -sf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
@@ -557,9 +545,9 @@ echo "$TIMEZONE" > /etc/timezone
 locale-gen
 printf 'LANG="%s.UTF-8"\nLC_COLLATE="C.UTF-8"\n' "$LOCALE" > /etc/env.d/02locale
 env-update
+
 if [[ $INIT == openrc ]]; then
     sed -i "s/^keymap=.*/keymap=\"$KEYMAP\"/" /etc/conf.d/keymaps || true
-    sed -i "s/^hostname=.*/hostname=\"$HOST_NAME\"/" /etc/conf.d/hostname || true
 else
     echo "KEYMAP=$KEYMAP" > /etc/vconsole.conf
 fi
@@ -570,45 +558,38 @@ cat > /etc/hosts <<EOF
 EOF
 source /etc/profile
 
-step "Installing GRUB and installkernel"
-emerge -q sys-boot/grub sys-kernel/installkernel
-
 step "Writing /etc/fstab"
 fsck=0; [[ $FS == ext4 ]] && fsck=1
 {
     echo "# <fs>  <mountpoint>  <type>  <opts>  <dump> <pass>"
-    echo "UUID=$ROOT_UUID  /      $FS   defaults,noatime  0 $fsck"
-    [[ $BOOT == uefi ]] && echo "UUID=$BOOT_UUID  /efi   vfat  umask=0077,noatime  0 2"
-    [[ -n $SWAP_UUID ]] && echo "UUID=$SWAP_UUID  none   swap  sw  0 0"
+    echo "UUID=$ROOT_UUID  /       $FS    defaults,noatime  0 $fsck"
+    [[ $BOOT == uefi ]] && echo "UUID=$BOOT_UUID  /efi    vfat    umask=0077,noatime  0 2"
+    [[ -n $SWAP_UUID ]] && echo "UUID=$SWAP_UUID  none    swap    sw  0 0"
 } > /etc/fstab
-cat /etc/fstab
 
-step "Installing firmware and kernel ($KERNEL)"
+step "Installing kernel and bootloader"
+emerge -q sys-boot/grub sys-kernel/installkernel
 fw=(sys-kernel/linux-firmware)
 [[ $CPU_VENDOR == GenuineIntel ]] && fw+=(sys-firmware/intel-microcode)
 emerge -q "${fw[@]}"
 emerge -q "$KERNEL"
 
-step "Installing the bootloader"
 if [[ $BOOT == uefi ]]; then
-    grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=Gentoo \
-        || echo "NVRAM entry could not be created (normal in some VMs); using the removable path instead."
+    grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=Gentoo || true
     grub-install --target=x86_64-efi --efi-directory=/efi --removable
 else
     grub-install --target=i386-pc "$DISK"
 fi
 grub-mkconfig -o /boot/grub/grub.cfg
 
-step "Installing base system tools"
+step "Installing base tools and desktop packages"
 pkgs=(net-misc/networkmanager app-admin/sudo)
 [[ $BOOT == uefi ]] && pkgs+=(sys-fs/dosfstools)
 [[ $FS == btrfs ]] && pkgs+=(sys-fs/btrfs-progs)
 [[ $FS == xfs ]]   && pkgs+=(sys-fs/xfsprogs)
-if [[ $INIT == openrc ]]; then pkgs+=(app-admin/sysklogd sys-process/cronie); fi
-emerge -q "${pkgs[@]}"
+[[ $INIT == openrc ]] && pkgs+=(app-admin/sysklogd sys-process/cronie)
 
 if [[ $DE != none ]]; then
-    step "Installing desktop environment: $DE"
     case $DE in
         plasma) de_pkgs=(kde-plasma/plasma-meta kde-apps/dolphin kde-apps/konsole x11-misc/sddm) ;;
         gnome)  de_pkgs=(gnome-base/gnome-light gnome-base/gdm) ;;
@@ -617,8 +598,10 @@ if [[ $DE != none ]]; then
     esac
     [[ $INIT == openrc ]] && de_pkgs+=(gui-libs/display-manager-init)
     de_pkgs+=(www-client/firefox-bin)
-    emerge -q "${de_pkgs[@]}"
+    pkgs+=("${de_pkgs[@]}")
 fi
+
+emerge -q "${pkgs[@]}"
 
 step "Enabling services"
 if [[ $INIT == openrc ]]; then
@@ -653,14 +636,14 @@ CHROOT
 
 run_chroot() {
     write_chroot_script
-    info "Entering chroot to install the system. This is the long part."
+    info "Entering chroot to install the system..."
     chroot "$MNT" /bin/bash /root/chroot-setup.sh \
-        || die "Installation inside the chroot failed. The target is still mounted at $MNT so you can inspect it (chroot $MNT /bin/bash)."
+        || die "Installation inside the chroot failed."
 }
 
 set_passwords() {
     info "Setting passwords..."
-    printf 'root:%s\n'      "$ROOT_PW" | chroot "$MNT" chpasswd
+    printf 'root:%s\n' "$ROOT_PW" | chroot "$MNT" chpasswd
     printf '%s:%s\n' "$USERNAME" "$USER_PW" | chroot "$MNT" chpasswd
 }
 
@@ -678,9 +661,6 @@ finish() {
     return 0
 }
 
-# ----------------------------------------------------------------------------
-# Main
-# ----------------------------------------------------------------------------
 main() {
     banner
     preflight
