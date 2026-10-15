@@ -5,7 +5,7 @@ An **unofficial**, open-source, interactive installer for [Gentoo Linux](https:/
 You answer a few questions (disk type, desktop environment, language, and so on). The script then partitions the disk, downloads the official stage3 tarball, verifies it, and installs a bootable Gentoo system.
 
 > **WARNING:** The script **erases the entire disk** you select. Back up your data first, and test in a virtual machine before using real hardware.
-> This is an early version (v0.1.0). It is not affiliated with or endorsed by the Gentoo Foundation.
+> This is an early version (v0.2.2). It is not affiliated with or endorsed by the Gentoo Foundation.
 
 ## What it asks you
 
@@ -14,7 +14,7 @@ You answer a few questions (disk type, desktop environment, language, and so on)
 | Disk type | NVMe, SATA/SAS/USB, eMMC/SD (MMC), VirtIO, or everything |
 | Disk | Pick from a list of matching disks |
 | Init system | OpenRC or systemd |
-| Desktop | None, KDE Plasma, GNOME, XFCE, i3 |
+| Desktop | None, KDE Plasma, GNOME, XFCE, LXQt, MATE, Cinnamon, LXDE, i3, Sway, Openbox |
 | Language / locale | en_US, en_GB, de_DE, fr_FR, es_ES, pt_BR, it_IT, ru_RU, ja_JP, zh_CN, or your own |
 | Keyboard, timezone, hostname | Free input, with validation |
 | User account and passwords | Regular user (in `wheel`, with sudo) plus root |

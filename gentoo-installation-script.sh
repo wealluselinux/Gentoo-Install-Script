@@ -13,11 +13,11 @@
 
 set -Eeo pipefail
 
-VERSION="0.2.1"
+VERSION="0.2.2"
 MNT="/mnt/gentoo"
 ARCH="amd64"
 MIRROR="${GENTOO_MIRROR:-https://distfiles.gentoo.org}"
-GENTOO_RELEASE_KEY="13EBBDBE7A12775DFDB1BABB572E0E2D182910"
+GENTOO_RELEASE_KEY="13EBBDBEDE7A12775DFDB1BABB572E0E2D182910"
 GENTOO_RELEASE_KEY_ALTERNATE="D99EAC7379A850BCE47DA5F29E6438C817072058"
 DASHBOARD_ENABLED=yes
 PROGRESS_DIR=""
@@ -82,6 +82,8 @@ case "${1:-}" in
     -h|--help) usage; exit 0 ;;
     -v|--version) echo "$VERSION"; exit 0 ;;
     --no-dashboard) DASHBOARD_ENABLED=no ;;
+    "") ;;
+    *) printf 'Unknown option: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
 esac
 
 # Make sure we can read from the keyboard even if piped (curl ... | bash)
@@ -90,14 +92,16 @@ esac
 # On a text-only live ISO, a second graphical terminal is not available. If
 # tmux is installed and this is a real interactive TTY, put the installer in
 # a tmux session so start_dashboard() can create a separate pane later.
-# Skip this when --no-dashboard was requested or when already inside tmux.
+# Skip this when --no-dashboard was requested, when already inside tmux, or when
+# the script was piped into bash (then $0 is not a file tmux could re-run).
 if [[ ${DASHBOARD_ENABLED:-yes} == yes && -z ${DISPLAY:-} && -z ${WAYLAND_DISPLAY:-} \
       && -z ${TMUX:-} && ${GENTOO_INSTALLER_TMUX_BOOTSTRAPPED:-0} != 1 \
-      && -t 0 && -t 1 ]] && command -v tmux >/dev/null 2>&1; then
+      && -t 0 && -t 1 && -f $0 ]] && command -v tmux >/dev/null 2>&1; then
     printf -v quoted_script '%q' "$0"
     session_name="gentoo-install-$$"
     info "No graphical desktop detected; trying a tmux session for the progress dashboard."
-    if tmux new-session -s "$session_name" "GENTOO_INSTALLER_TMUX_BOOTSTRAPPED=1 bash $quoted_script"; then
+    # If the installer fails, keep the pane open so its error output can be read.
+    if tmux new-session -s "$session_name" "GENTOO_INSTALLER_TMUX_BOOTSTRAPPED=1 bash $quoted_script; rc=\$?; [ \$rc -eq 0 ] || { printf '\\n[installer exited with status %s] Press Enter to close: ' \"\$rc\"; read _; }"; then
         exit 0
     else
         warn "Could not start tmux; continuing in the current terminal."
@@ -124,9 +128,9 @@ ask() {
 ask_secret() {
     local __var=$1 __p=$2 a b
     while :; do
-        read -rs -p "$__p: " a; echo
+        IFS= read -rs -p "$__p: " a; echo
         [[ -n $a ]] || { warn "Cannot be empty."; continue; }
-        read -rs -p "Confirm: " b; echo
+        IFS= read -rs -p "Confirm: " b; echo
         [[ $a == "$b" ]] && break
         warn "Passwords do not match."
     done
@@ -194,11 +198,13 @@ trap 'exit 143' TERM
 printf '\033[?25l'
 while :; do
     if [[ -r $status_file ]]; then
-        IFS='|' read -r pct message < "$status_file" || true
-        [[ $pct =~ ^[0-9]+$ ]] || pct=0
-        [[ -n ${message:-} ]] || message=$last_message
-        last_pct=$pct
-        last_message=$message
+        # Only accept a complete "pct|message" line, so a half-written file
+        # (the installer truncates then writes) cannot flash the bar back to 0%.
+        if IFS='|' read -r pct message < "$status_file" && [[ $pct =~ ^[0-9]+$ ]]; then
+            [[ -n ${message:-} ]] || message=$last_message
+            last_pct=$pct
+            last_message=$message
+        fi
     fi
 
     printf '\033[H\033[2J'
@@ -264,7 +270,8 @@ DASHBOARD
             warn "No supported graphical terminal could be opened; continuing without the separate dashboard."
         fi
     elif [[ -n ${TMUX:-} ]] && command -v tmux >/dev/null 2>&1; then
-        if tmux split-window -h "bash '$DASHBOARD_SCRIPT' '$PROGRESS_FILE'"; then
+        # -d keeps keyboard focus in the installer pane (it still has prompts to answer).
+        if tmux split-window -d -h "bash '$DASHBOARD_SCRIPT' '$PROGRESS_FILE'"; then
             DASHBOARD_STARTED=yes
             ok "Progress dashboard opened in a tmux split."
         else
@@ -610,7 +617,6 @@ confirm_config() {
     printf '  %-16s %s\n' "Swap:"           "${SWAP_GB} GiB"
     printf '  %-16s %s\n' "Kernel:"         "$KERNEL"
     printf '  %-16s %s\n' "Binary pkgs:"    "$BINPKG"
-    printf '  %-16s %s\n' "Build jobs:"     "$JOBS"
     printf '  %-16s %s\n' "Video cards:"    "${VIDEO:-(none detected)}"
     echo "${B}======================================================${N}"
     echo
@@ -749,8 +755,13 @@ verify_signature() {
     gnupg=$(mktemp -d)
     chmod 700 "$gnupg"
     asc="$2.asc"
-    if ! fetch "$1" "$asc" 2>/dev/null; then
+    # Stop any gpg-agent/dirmngr started in the temporary keyring before deleting it.
+    cleanup_gnupg() {
+        gpgconf --homedir "$gnupg" --kill all >/dev/null 2>&1 || true
         rm -rf "$gnupg"
+    }
+    if ! fetch "$1" "$asc" 2>/dev/null; then
+        cleanup_gnupg
         die "Could not download the stage3 signature. Refusing to install an unverified stage3."
     fi
     # Use the live environment's Gentoo key bundle when available, and also
@@ -768,10 +779,10 @@ verify_signature() {
     if gpg --homedir "$gnupg" --quiet --verify "$asc" "$2" 2>/dev/null; then
         ok "GPG signature verified"
     else
-        rm -rf "$gnupg"
+        cleanup_gnupg
         die "GPG signature verification failed. Refusing to install this stage3."
     fi
-    rm -rf "$gnupg"
+    cleanup_gnupg
 }
 
 # ----------------------------------------------------------------------------
@@ -784,20 +795,25 @@ configure_target() {
     # Replace settings managed by this installer instead of accumulating duplicate
     # assignments. Keep conservative CFLAGS; -march=native gives little benefit
     # for this install and makes installed binaries less portable.
-    sed -i -E '/^[[:space:]]*(COMMON_FLAGS|MAKEOPTS|EMERGE_DEFAULT_OPTS|PORTAGE_TMPDIR|ACCEPT_LICENSE|GENTOO_MIRRORS|VIDEO_CARDS|GRUB_PLATFORMS)=/d' "$mc"
+    sed -i -E '/^[[:space:]]*(MAKEOPTS|EMERGE_DEFAULT_OPTS|PORTAGE_TMPDIR|ACCEPT_LICENSE|GENTOO_MIRRORS|VIDEO_CARDS|GRUB_PLATFORMS)=/d' "$mc"
     local common_flags="-O2 -pipe"
     # Avoid GCC's extra pipe buffers on very small-memory machines.
     (( RAM_MIB <= 4096 )) && common_flags="-O2"
+    # COMMON_FLAGS is rewritten in place, never deleted and re-appended: stage3's
+    # CFLAGS="${COMMON_FLAGS}" lines come first in the file, and would expand to an
+    # empty string (no optimisation) if COMMON_FLAGS were only defined after them.
+    if grep -qE '^[[:space:]]*COMMON_FLAGS=' "$mc"; then
+        sed -i -E "s|^[[:space:]]*COMMON_FLAGS=.*|COMMON_FLAGS=\"${common_flags}\"|" "$mc"
+    else
+        sed -i '1i COMMON_FLAGS="'"$common_flags"'"\nCFLAGS="${COMMON_FLAGS}"\nCXXFLAGS="${COMMON_FLAGS}"\nFCFLAGS="${COMMON_FLAGS}"\nFFLAGS="${COMMON_FLAGS}"' "$mc"
+    fi
     {
         echo
         echo "# --- Added by Gentoo Installation Script ---"
-        printf 'COMMON_FLAGS="%s"\n' "$common_flags"
         printf 'MAKEOPTS="-j%s -l%s"\n' "$JOBS" "$JOBS"
+        printf 'EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --jobs=%s --load-average=%s"\n' "$PKG_JOBS" "$JOBS"
         if [[ $BINPKG == yes ]]; then
-            printf 'EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --jobs=%s --load-average=%s"\n' "$PKG_JOBS" "$JOBS"
             echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"'
-        else
-            printf 'EMERGE_DEFAULT_OPTS="${EMERGE_DEFAULT_OPTS} --jobs=%s --load-average=%s"\n' "$PKG_JOBS" "$JOBS"
         fi
         echo 'PORTAGE_TMPDIR="/var/tmp/portage"'
         echo 'ACCEPT_LICENSE="@FREE @BINARY-REDISTRIBUTABLE intel-ucode"'
@@ -862,10 +878,9 @@ emerge_progress() {
     set +e
     emerge "$@" 2>&1 | tee /dev/tty | awk -v status_file="$CHROOT_PROGRESS_FILE" \
         -v start="$start" -v end="$end" -v label="$label" '
-        />>> Emerging \([0-9]+ of [0-9]+\)/ {
-            line=$0
-            sub(/^.*>>> Emerging \(/, "", line)
-            split(line, part, /[ )]/)
+        />>> Emerging/ && match($0, /\([0-9]+ of [0-9]+\)/) {
+            # Matches both "Emerging (N of M)" and "Emerging binary (N of M)".
+            split(substr($0, RSTART + 1, RLENGTH - 2), part, " ")
             current=part[1]+0
             total=part[3]+0
             if (total > 0) {
@@ -924,11 +939,12 @@ if [[ $BINPKG == yes ]]; then
     progress_update 47 "Configuring the official binary-package repository"
     step "Setting up Gentoo binary repository host"
     mkdir -p /etc/portage/binrepos.conf
-    binhost_profile=${selected_profile#default/linux/amd64/}
+    # The official binhost publishes one directory per ABI under 23.0/ (x86-64,
+    # x86-64-v3, ...), not one per profile, so the URL must not include the profile.
     cat > /etc/portage/binrepos.conf/gentoobinhost.conf <<EOF
 [gentoobinhost]
 priority = 9999
-sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/${binhost_profile}/x86-64/
+sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64/
 EOF
     getuto
     progress_update 48 "Binary repository configured"
@@ -963,6 +979,9 @@ if [[ $INIT == openrc ]]; then
     sed -i "s/^keymap=.*/keymap=\"$KEYMAP\"/" /etc/conf.d/keymaps || true
 else
     echo "KEYMAP=$KEYMAP" > /etc/vconsole.conf
+    # systemd (and GNOME/display-manager sessions started by it) read the locale
+    # from /etc/locale.conf, not from Gentoo's /etc/env.d.
+    printf 'LANG=%s.UTF-8\n' "$LOCALE" > /etc/locale.conf
 fi
 echo "$HOST_NAME" > /etc/hostname
 cat > /etc/hosts <<EOF
