@@ -97,6 +97,30 @@ New to Gentoo? The [`gentoo-guides/`](gentoo-guides/) folder has beginner guides
 
 Start with the [Gentoo Guides index](gentoo-guides/README.md).
 
+## End-4 / illogical-impulse Hyprland dots (experimental)
+
+The repository includes `gentoo-end4-dots-installer.sh`, an experimental post-install
+bootstrap helper for preparing the official [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland)
+checkout on an already-installed Gentoo system.
+
+**Important:** this is not a complete Gentoo port of illogical-impulse yet. The upstream
+setup contains distribution-specific package and setup logic and is not confirmed to work
+on Gentoo. The helper clones the upstream repository for review; it deliberately does not
+install packages, overwrite your desktop configuration, or run the upstream setup command.
+
+Run it as your regular desktop user (not root):
+
+```bash
+wget https://raw.githubusercontent.com/wealluselinux/Gentoo-Install-Script/main/gentoo-end4-dots-installer.sh
+chmod +x gentoo-end4-dots-installer.sh
+./gentoo-end4-dots-installer.sh
+```
+
+The checkout is placed at `~/.local/src/dots-hyprland`. Read the upstream documentation
+and verify Gentoo package availability before attempting installation. Back up
+`~/.config` first. This helper is a starting point for a Gentoo-native port, not a
+claim of full End-4 compatibility.
+
 ## Tips
 
 - **Use a different mirror:** `GENTOO_MIRROR=https://mirror.example.org/gentoo ./gentoo-installation-script.sh`
