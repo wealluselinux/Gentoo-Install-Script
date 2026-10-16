@@ -1,5 +1,7 @@
 # Gentoo Installation Script
 
+**WARNING** Please do not use the main installer script, it will wipe your system, i am currently trying to fix it, please give me a day or do to fix it
+
 An **unofficial**, open-source, interactive installer for [Gentoo Linux](https://www.gentoo.org/), in the spirit of `archinstall`.
 
 You answer a few questions (disk type, desktop environment, language, and so on). The script then partitions the disk, downloads the official stage3 tarball, verifies it, and installs a bootable Gentoo system.
