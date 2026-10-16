@@ -99,27 +99,44 @@ Start with the [Gentoo Guides index](gentoo-guides/README.md).
 
 ## End-4 / illogical-impulse Hyprland dots (experimental)
 
-The repository includes `gentoo-end4-dots-installer.sh`, an experimental post-install
-bootstrap helper for preparing the official [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland)
-checkout on an already-installed Gentoo system.
+The original `gentoo-end4-dots-installer.sh` and init-specific variants in `useful scripts/OpenRC/` and `useful scripts/Systemd/` are experimental post-install bootstrap helpers for preparing the official [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland) checkout on an installed Gentoo system.
 
-**Important:** this is not a complete Gentoo port of illogical-impulse yet. The upstream
-setup contains distribution-specific package and setup logic and is not confirmed to work
-on Gentoo. The helper clones the upstream repository for review; it deliberately does not
-install packages, overwrite your desktop configuration, or run the upstream setup command.
+**Important:** these scripts only clone/update the upstream repository. They do not install the desktop, overwrite your configuration, or run upstream setup. End-4's upstream setup contains distribution-specific package logic and is not confirmed to work on Gentoo. The OpenRC/systemd variants check that the matching init tools are present; they do not yet perform a complete Gentoo-native dotfiles installation.
 
-Run it as your regular desktop user (not root):
+Run the matching script as your regular desktop user, not root. Back up `~/.config` before later attempting any dotfile installation.
+
+## Useful post-install scripts: OpenRC and systemd
+
+The `useful scripts/` folder is split by init system:
+
+- [OpenRC scripts](https://github.com/wealluselinux/Gentoo-Install-Script/tree/main/useful%20scripts/OpenRC)
+- [systemd scripts](https://github.com/wealluselinux/Gentoo-Install-Script/tree/main/useful%20scripts/Systemd)
+
+Each folder currently contains:
+- An End-4 dots bootstrap helper that checks for the matching init system and clones/updates the upstream repository only.
+- A desktop setup helper that offers to install PipeWire, WirePlumber, ALSA support, NetworkManager, and D-Bus through Portage, then enables NetworkManager and D-Bus using the matching init system.
+
+### Run the desktop setup helper
+
+For OpenRC:
 
 ```bash
-wget https://raw.githubusercontent.com/wealluselinux/Gentoo-Install-Script/main/gentoo-end4-dots-installer.sh
-chmod +x gentoo-end4-dots-installer.sh
-./gentoo-end4-dots-installer.sh
+wget -O gentoo-desktop-setup-openrc.sh "https://raw.githubusercontent.com/wealluselinux/Gentoo-Install-Script/main/useful%20scripts/OpenRC/gentoo-desktop-setup-openrc.sh"
+chmod +x gentoo-desktop-setup-openrc.sh
+./gentoo-desktop-setup-openrc.sh
 ```
 
-The checkout is placed at `~/.local/src/dots-hyprland`. Read the upstream documentation
-and verify Gentoo package availability before attempting installation. Back up
-`~/.config` first. This helper is a starting point for a Gentoo-native port, not a
-claim of full End-4 compatibility.
+For systemd:
+
+```bash
+wget -O gentoo-desktop-setup-systemd.sh "https://raw.githubusercontent.com/wealluselinux/Gentoo-Install-Script/main/useful%20scripts/Systemd/gentoo-desktop-setup-systemd.sh"
+chmod +x gentoo-desktop-setup-systemd.sh
+./gentoo-desktop-setup-systemd.sh
+```
+
+These helpers run as your regular user and use `sudo` for privileged commands. Portage will show a confirmation before installing packages. They enable NetworkManager for Wi-Fi/network management and offer an optional per-connection DNS override (IPv4 defaults to Cloudflare and Quad9; IPv6 is optional). DNS settings are not changed unless you opt in.
+
+**Limits:** PipeWire is primarily a per-user audio service and may need desktop-session integration or user-level service configuration; these scripts install the packages but do not guarantee every desktop session starts audio automatically. Wi-Fi still requires a supported adapter, kernel driver, and firmware. Changing DNS cannot fix a missing driver or broken Wi-Fi link. Review the script before running it, and test in a VM where practical.
 
 ## Tips
 
@@ -137,10 +154,10 @@ claim of full End-4 compatibility.
 
 ## Roadmap ideas
 
-- arm64 support, and systemd-boot / rEFInd as bootloader choices.
-- LUKS encryption, LVM and btrfs subvolumes.
+- arm64 support, GRUB alternatives, encryption and LVM.
 - Unattended installs from a config file.
 - More desktops and window managers (Sway, Hyprland, Cinnamon, MATE).
+- A complete Gentoo-native End-4/illogical-impulse dependency and service mapping.
 
 ## Contributing
 
