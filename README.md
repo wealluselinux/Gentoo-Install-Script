@@ -1,6 +1,6 @@
 # Gentoo Installation Script
 
-**WARNING** Please do not use the main installer script, it will wipe your system, i am currently trying to fix it, please give me a day or do to fix it
+**WARNING** Please do not use the main installer script, it will wipe your system, i am currently trying to fix it, please give me a day or to to fix it, for now use the copy with is 1.1.0
 
 An **unofficial**, open-source, interactive installer for [Gentoo Linux](https://www.gentoo.org/), in the spirit of `archinstall`.
 
