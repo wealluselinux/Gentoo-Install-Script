@@ -13,7 +13,7 @@
 
 set -Eeo pipefail
 
-VERSION="0.2.2"
+VERSION="0.2.3"
 MNT="/mnt/gentoo"
 ARCH="amd64"
 MIRROR="${GENTOO_MIRROR:-https://distfiles.gentoo.org}"
@@ -207,16 +207,20 @@ while :; do
         fi
     fi
 
+    cols=$(tput cols 2>/dev/null || echo 80)
+    (( cols > 20 )) || cols=80
+    sep_len=$(( cols - 4 )); (( sep_len > 42 )) && sep_len=42
+    printf -v sep '%*s' "$sep_len" ''
     printf '\033[H\033[2J'
     printf '\033[1;36m  GENTOO INSTALLER\033[0m\n'
-    printf '  ------------------------------------------\n\n'
+    printf '  %s\n\n' "${sep// /-}"
     printf '  Overall progress\n\n  ['
-    width=36
+    width=$(( cols - 12 )); (( width > 36 )) && width=36; (( width < 8 )) && width=8
     filled=$(( last_pct * width / 100 ))
     for ((i=0; i<filled; i++)); do printf '\033[1;32m#\033[0m'; done
     for ((i=filled; i<width; i++)); do printf ' '; done
     printf '] %3d%%\n\n' "$last_pct"
-    printf '  Current task:\n  %s\n\n' "$last_message"
+    printf '  Current task:\n  %s\n\n' "${last_message:0:$((cols - 4))}"
     printf '  Detailed command output stays in the\n  original installer terminal.\n'
 
     if [[ $last_message == FAILED:* ]]; then
@@ -354,9 +358,12 @@ preflight() {
     [[ $EUID -eq 0 ]] || die "Please run as root."
     [[ $(uname -m) == x86_64 ]] || die "Only x86_64 (amd64) is supported right now."
     local missing=() t
+    # Only tools the live system itself runs. useradd, groupadd, chpasswd, getent,
+    # ln and sort are used inside the new system (via chroot), so the live
+    # environment does not need them.
     for t in lsblk sfdisk wipefs blkid tar chroot sha256sum gpg partprobe mount umount \
-             awk sed grep xz blockdev nproc udevadm sleep sync mktemp chmod cp ln sort \
-             head tac swapoff swapon mkswap getent useradd groupadd chpasswd; do
+             awk sed grep xz blockdev nproc udevadm sleep sync mktemp chmod cp \
+             head tac swapoff swapon mkswap; do
         command -v "$t" >/dev/null 2>&1 || missing+=("$t")
     done
     command -v curl >/dev/null 2>&1 || command -v wget >/dev/null 2>&1 || missing+=("curl or wget")
@@ -623,6 +630,9 @@ confirm_config() {
     lsblk "$DISK"
     echo
     warn "ALL DATA ON $DISK WILL BE PERMANENTLY DESTROYED."
+    if [[ $BINPKG == no && $DE != none ]]; then
+        warn "Compiling a desktop from source can take many hours."
+    fi
     local c
     read -r -p "Type YES (in capitals) to continue: " c || true
     [[ $c == YES ]] || die "Aborted. Nothing was changed."
@@ -946,7 +956,11 @@ if [[ $BINPKG == yes ]]; then
 priority = 9999
 sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64/
 EOF
-    getuto
+    getuto || {
+        echo "getuto could not set up the binary package signing keys." >&2
+        echo "Re-run the installer and choose 'Compile missing packages from source'." >&2
+        exit 1
+    }
     progress_update 48 "Binary repository configured"
 fi
 
@@ -977,6 +991,7 @@ env-update
 
 if [[ $INIT == openrc ]]; then
     sed -i "s/^keymap=.*/keymap=\"$KEYMAP\"/" /etc/conf.d/keymaps || true
+    sed -i "s/^hostname=.*/hostname=\"$HOST_NAME\"/" /etc/conf.d/hostname || true
 else
     echo "KEYMAP=$KEYMAP" > /etc/vconsole.conf
     # systemd (and GNOME/display-manager sessions started by it) read the locale
@@ -999,6 +1014,7 @@ fsck=0; [[ $FS == ext4 ]] && fsck=1
     [[ $BOOT == uefi ]] && echo "UUID=$BOOT_UUID  /efi    vfat    umask=0077,noatime  0 2"
     [[ -n $SWAP_UUID ]] && echo "UUID=$SWAP_UUID  none    swap    sw  0 0"
 } > /etc/fstab
+cat /etc/fstab
 
 step "Installing kernel and bootloader"
 emerge_progress 54 58 "Installing GRUB and installkernel" sys-boot/grub sys-kernel/installkernel
@@ -1008,7 +1024,8 @@ emerge_progress 58 61 "Installing firmware" "${fw[@]}"
 emerge_progress 61 67 "Installing the selected kernel" "$KERNEL"
 
 if [[ $BOOT == uefi ]]; then
-    grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=Gentoo || true
+    grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id=Gentoo \
+        || echo "NVRAM entry could not be created (normal in some VMs); using the removable path instead."
     grub-install --target=x86_64-efi --efi-directory=/efi --removable
 else
     grub-install --target=i386-pc "$DISK"
@@ -1046,6 +1063,10 @@ if [[ $DE != none ]]; then
         [[ $DE == gnome ]] && de_pkgs+=(gnome-base/gnome-session-openrc)
     else
         de_pkgs+=(sys-apps/dbus)
+    fi
+    # With no graphical login manager, X11 sessions are started with startx.
+    if [[ -z $DM && $DE != sway ]]; then
+        de_pkgs+=(x11-apps/xinit)
     fi
     de_pkgs+=(www-client/firefox-bin)
     pkgs+=("${de_pkgs[@]}")

@@ -5,7 +5,7 @@ An **unofficial**, open-source, interactive installer for [Gentoo Linux](https:/
 You answer a few questions (disk type, desktop environment, language, and so on). The script then partitions the disk, downloads the official stage3 tarball, verifies it, and installs a bootable Gentoo system.
 
 > **WARNING:** The script **erases the entire disk** you select. Back up your data first, and test in a virtual machine before using real hardware.
-> This is an early version (v0.2.2). It is not affiliated with or endorsed by the Gentoo Foundation.
+> This is an early version (v0.2.3). It is not affiliated with or endorsed by the Gentoo Foundation.
 
 ## What it asks you
 
