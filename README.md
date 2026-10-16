@@ -138,6 +138,25 @@ These helpers run as your regular user and use `sudo` for privileged commands. P
 
 **Limits:** PipeWire is primarily a per-user audio service and may need desktop-session integration or user-level service configuration; these scripts install the packages but do not guarantee every desktop session starts audio automatically. Wi-Fi still requires a supported adapter, kernel driver, and firmware. Changing DNS cannot fix a missing driver or broken Wi-Fi link. Review the script before running it, and test in a VM where practical.
 
+## Useful apps installer (both init systems)
+
+The [`useful scripts/Both Init Systems/`](https://github.com/wealluselinux/Gentoo-Install-Script/tree/main/useful%20scripts/Both%20Init%20Systems) folder contains an init-independent starter-app installer:
+
+- [`gentoo-useful-apps-installer.sh`](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Both%20Init%20Systems/gentoo-useful-apps-installer.sh)
+- Installs Fastfetch, Flatpak, Git, curl, wget, nano, htop, tree, zip, and unzip through Portage.
+- Optionally adds the official Flathub remote for your user account.
+- Works with either OpenRC or systemd and does not enable or change init services.
+
+Run it as your regular user:
+
+```bash
+wget -O gentoo-useful-apps-installer.sh "https://raw.githubusercontent.com/wealluselinux/Gentoo-Install-Script/main/useful%20scripts/Both%20Init%20Systems/gentoo-useful-apps-installer.sh"
+chmod +x gentoo-useful-apps-installer.sh
+./gentoo-useful-apps-installer.sh
+```
+
+The script asks before proceeding, and Portage displays its package plan before installing. The Flathub remote is also optional. Gentoo package availability can depend on your profile, repository sync, architecture, and keyword settings; review Portage messages instead of forcing masked packages.
+
 ## Tips
 
 - **Use a different mirror:** `GENTOO_MIRROR=https://mirror.example.org/gentoo ./gentoo-installation-script.sh`
