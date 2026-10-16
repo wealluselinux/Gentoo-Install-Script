@@ -157,6 +157,35 @@ chmod +x gentoo-useful-apps-installer.sh
 
 The script asks before proceeding, and Portage displays its package plan before installing. The Flathub remote is also optional. Gentoo package availability can depend on your profile, repository sync, architecture, and keyword settings; review Portage messages instead of forcing masked packages.
 
+## Post-install toolkit: diagnostics, maintenance, gaming, and desktops
+
+The [Both Init Systems folder](https://github.com/wealluselinux/Gentoo-Install-Script/tree/main/useful%20scripts/Both%20Init%20Systems) contains scripts that do not need to enable or manage init-specific services:
+
+- [`gentoo-installer-menu.sh`](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Both%20Init%20Systems/gentoo-installer-menu.sh) — menu launcher for the post-install toolkit. It detects OpenRC/systemd for init-specific choices when possible.
+- [`gentoo-system-info.sh`](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Both%20Init%20Systems/gentoo-system-info.sh) — read-only system and hardware summary.
+- [`gentoo-network-diagnostics.sh`](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Both%20Init%20Systems/gentoo-network-diagnostics.sh) — read-only interface, route, DNS, and HTTPS checks.
+- [`gentoo-maintenance-helper.sh`](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Both%20Init%20Systems/gentoo-maintenance-helper.sh) — repository sync, Portage update, configuration-update review, and disk-space menu.
+- [`gentoo-gaming-tools-installer.sh`](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Both%20Init%20Systems/gentoo-gaming-tools-installer.sh) — optional Vulkan/graphics diagnostic tools; it does not configure GPU drivers, multilib, Steam, or third-party overlays.
+- [`gentoo-developer-tools-installer.sh`](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Both%20Init%20Systems/gentoo-developer-tools-installer.sh) — optional Git, Python, CMake, GCC, GDB, and Vim packages.
+- [`gentoo-useful-apps-installer.sh`](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Both%20Init%20Systems/gentoo-useful-apps-installer.sh) — basic apps including Fastfetch and Flatpak.
+
+Desktop installation is init-specific, so the chooser scripts are kept separate:
+
+- [OpenRC desktop chooser](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/OpenRC/gentoo-desktop-chooser-openrc.sh) — KDE Plasma, XFCE, or Hyprland. It prints OpenRC display-manager follow-up guidance instead of automatically changing service configuration.
+- [systemd desktop chooser](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Systemd/gentoo-desktop-chooser-systemd.sh) — KDE Plasma, GNOME, XFCE, or Hyprland, with optional display-manager enablement after installation.
+
+### Run the menu
+
+Download or clone the complete repository first; the menu needs the other scripts to be present in their folders. From the repository root, run:
+
+```bash
+bash "useful scripts/Both Init Systems/gentoo-installer-menu.sh"
+```
+
+You can also run individual scripts directly. Installer/helper scripts should be launched as your regular user, not root; scripts that need administrative access call `sudo` and ask for confirmation. The diagnostics scripts are read-only. Portage package availability and dependencies vary with profile, USE flags, architecture, and repository state, so review its proposed changes carefully.
+
+**Testing note:** these scripts were committed as initial implementations and have not been confirmed on every Gentoo profile or real hardware. Test in a virtual machine when practical, review the shell scripts before running them, and do not treat a successful syntax check as proof that package installation or desktop startup will work on your machine.
+
 ## Tips
 
 - **Use a different mirror:** `GENTOO_MIRROR=https://mirror.example.org/gentoo ./gentoo-installation-script.sh`
