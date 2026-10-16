@@ -31,7 +31,7 @@ packages=(
   net-misc/wget
   app-editors/nano
   sys-process/htop
-  app-misc/tree
+  app-text/tree
   app-arch/zip
   app-arch/unzip
 )
