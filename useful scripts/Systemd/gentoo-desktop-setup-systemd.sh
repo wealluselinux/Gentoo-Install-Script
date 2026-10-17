@@ -22,14 +22,14 @@ read -r -p "Install PipeWire, WirePlumber, ALSA support, NetworkManager and dbus
 say "Installing audio and networking packages..."
 sudo emerge --ask --verbose \
   media-video/pipewire \
-  media-sound/wireplumber \
+  media-video/wireplumber \
   media-libs/alsa-lib \
   media-plugins/alsa-plugins \
   net-misc/networkmanager \
   sys-apps/dbus
 
 say "Enabling system services..."
-sudo systemctl enable --now dbus
+sudo systemctl start dbus || warn "Could not start dbus now; it is normally already running on systemd."
 sudo systemctl enable --now NetworkManager
 
 printf '\n'

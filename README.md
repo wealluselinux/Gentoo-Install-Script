@@ -97,14 +97,6 @@ New to Gentoo? The [`gentoo-guides/`](gentoo-guides/) folder has beginner guides
 
 Start with the [Gentoo Guides index](gentoo-guides/README.md).
 
-## End-4 / illogical-impulse Hyprland dots (experimental)
-
-The original `gentoo-end4-dots-installer.sh` and init-specific variants in `useful scripts/OpenRC/` and `useful scripts/Systemd/` are experimental post-install bootstrap helpers for preparing the official [end-4/dots-hyprland](https://github.com/end-4/dots-hyprland) checkout on an installed Gentoo system.
-
-**Important:** these scripts only clone/update the upstream repository. They do not install the desktop, overwrite your configuration, or run upstream setup. End-4's upstream setup contains distribution-specific package logic and is not confirmed to work on Gentoo. The OpenRC/systemd variants check that the matching init tools are present; they do not yet perform a complete Gentoo-native dotfiles installation.
-
-Run the matching script as your regular desktop user, not root. Back up `~/.config` before later attempting any dotfile installation.
-
 ## Useful post-install scripts: OpenRC and systemd
 
 The `useful scripts/` folder is split by init system:
@@ -113,7 +105,7 @@ The `useful scripts/` folder is split by init system:
 - [systemd scripts](https://github.com/wealluselinux/Gentoo-Install-Script/tree/main/useful%20scripts/Systemd)
 
 Each folder currently contains:
-- An End-4 dots bootstrap helper that checks for the matching init system and clones/updates the upstream repository only.
+- A desktop chooser (KDE Plasma, XFCE, Hyprland, plus GNOME on systemd).
 - A desktop setup helper that offers to install PipeWire, WirePlumber, ALSA support, NetworkManager, and D-Bus through Portage, then enables NetworkManager and D-Bus using the matching init system.
 
 ### Run the desktop setup helper
@@ -171,8 +163,8 @@ The [Both Init Systems folder](https://github.com/wealluselinux/Gentoo-Install-S
 
 Desktop installation is init-specific, so the chooser scripts are kept separate:
 
-- [OpenRC desktop chooser](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/OpenRC/gentoo-desktop-chooser-openrc.sh) — KDE Plasma, XFCE, or Hyprland. It prints OpenRC display-manager follow-up guidance instead of automatically changing service configuration.
-- [systemd desktop chooser](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Systemd/gentoo-desktop-chooser-systemd.sh) — KDE Plasma, GNOME, XFCE, or Hyprland, with optional display-manager enablement after installation.
+- [OpenRC desktop chooser](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/OpenRC/gentoo-desktop-chooser-openrc.sh) — KDE Plasma, XFCE, or Hyprland. It prints OpenRC display-manager follow-up guidance instead of automatically changing service configuration. Hyprland is only offered if your Portage setup can see `gui-wm/hyprland`; it may be masked or testing-only in the main Gentoo repository.
+- [systemd desktop chooser](https://github.com/wealluselinux/Gentoo-Install-Script/blob/main/useful%20scripts/Systemd/gentoo-desktop-chooser-systemd.sh) — KDE Plasma, GNOME, XFCE, or Hyprland, with optional display-manager enablement after installation. The same Hyprland availability check applies.
 
 ### Run the menu
 

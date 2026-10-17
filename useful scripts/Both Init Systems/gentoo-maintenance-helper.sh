@@ -9,21 +9,21 @@ echo '=== Gentoo Maintenance Helper ==='
 echo 'Choose an operation. Package updates are always shown by Portage before execution.'
 echo
 PS3='Select an option (1-5): '
-select action in 'Sync Gentoo repositories' 'Preview and confirm system update' 'Review pending configuration updates (dispatch-conf)' 'Show disk space' 'Quit'; do
+select _choice in 'Sync Gentoo repositories' 'Preview and confirm system update' 'Review pending configuration updates (dispatch-conf)' 'Show disk space' 'Quit'; do
   case "$REPLY" in
     1)
       read -r -p 'Sync Portage repositories now? [y/N] ' answer
       [[ "$answer" =~ ^[Yy]$ ]] || { echo 'Cancelled.'; continue; }
-      sudo emerge --sync
+      sudo emerge --sync || echo 'Sync failed or was cancelled; see the output above.'
       ;;
     2)
       echo 'Portage will display the proposed update plan and ask for confirmation.'
-      sudo emerge --ask --verbose --update --deep --newuse @world
+      sudo emerge --ask --verbose --update --deep --newuse @world || echo 'Update was cancelled or failed; see the Portage output above.'
       ;;
     3)
       if command -v dispatch-conf >/dev/null 2>&1; then
         echo 'dispatch-conf interactively reviews configuration file updates; read each prompt carefully.'
-        sudo dispatch-conf
+        sudo dispatch-conf || echo 'dispatch-conf exited with an error; nothing more was changed by this helper.'
       else
         echo 'dispatch-conf is unavailable. Check your Portage installation and configuration.'
       fi

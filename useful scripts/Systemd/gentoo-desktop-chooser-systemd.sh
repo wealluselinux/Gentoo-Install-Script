@@ -11,14 +11,21 @@ echo 'Portage will show its package plan before installing.'
 PS3='Choose a desktop (1-5): '
 select desktop in 'KDE Plasma' 'GNOME' 'XFCE' 'Hyprland (Wayland)' 'Cancel'; do
   case "$REPLY" in
-    1) packages=(kde-plasma/plasma-meta kde-plasma/sddm); dm=sddm; break ;;
+    1) packages=(kde-plasma/plasma-meta x11-misc/sddm); dm=sddm; break ;;
     2) packages=(gnome-base/gnome gnome-base/gdm); dm=gdm; break ;;
-    3) packages=(xfce-base/xfce4-meta x11-misc/lightdm); dm=lightdm; break ;;
+    3) packages=(x11-base/xorg-server xfce-base/xfce4-meta x11-misc/lightdm x11-misc/lightdm-gtk-greeter); dm=lightdm; break ;;
     4) packages=(gui-wm/hyprland gui-apps/waybar gui-apps/wofi); dm=none; break ;;
     5) echo 'Cancelled.'; exit 0 ;;
     *) echo 'Choose 1-5.' ;;
   esac
 done
+
+if [[ $desktop == Hyprland* ]] && ! portageq best_visible / gui-wm/hyprland >/dev/null 2>&1; then
+  echo 'gui-wm/hyprland cannot be installed with your current Portage setup.'
+  echo 'It may be masked, keyworded as testing (~amd64), or no longer in the main Gentoo repository.'
+  echo 'Check with: emerge --search hyprland   Read the Gentoo wiki before adding any third-party overlay.'
+  exit 1
+fi
 
 echo "Selected: $desktop"
 printf 'Package atoms: %s\n' "${packages[*]}"

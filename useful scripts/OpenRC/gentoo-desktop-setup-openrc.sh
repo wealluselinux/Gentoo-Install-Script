@@ -22,7 +22,7 @@ read -r -p "Install PipeWire, WirePlumber, ALSA support, NetworkManager and dbus
 say "Installing audio and networking packages..."
 sudo emerge --ask --verbose \
   media-video/pipewire \
-  media-sound/wireplumber \
+  media-video/wireplumber \
   media-libs/alsa-lib \
   media-plugins/alsa-plugins \
   net-misc/networkmanager \
@@ -63,8 +63,6 @@ else
   warn "nmcli is unavailable. Reboot or check that NetworkManager installed correctly."
 fi
 
-printf '\n'
-good_placeholder="Setup commands completed."
-printf '[+] %s\n' "$good_placeholder"
+printf '\n[+] Setup commands completed.\n'
 warn "PipeWire is a per-user audio service: log out and back in, then check with 'wpctl status' and 'pactl info' if installed."
 warn "For Wi-Fi, use 'nmtui' or your desktop network menu. Firmware/driver problems need separate diagnosis."
