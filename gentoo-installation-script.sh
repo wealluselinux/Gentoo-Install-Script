@@ -13,7 +13,7 @@
 
 set -Eeo pipefail
 
-VERSION="0.2.3"
+VERSION="0.2.4"
 MNT="/mnt/gentoo"
 ARCH="amd64"
 MIRROR="${GENTOO_MIRROR:-https://distfiles.gentoo.org}"
@@ -825,7 +825,9 @@ configure_target() {
         if [[ $BINPKG == yes ]]; then
             echo 'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"'
         fi
-        echo 'PORTAGE_TMPDIR="/var/tmp/portage"'
+        # Do NOT set PORTAGE_TMPDIR to /var/tmp/portage: its default is /var/tmp and
+        # Portage appends "portage" itself, so that value points at a folder that
+        # does not exist and makes emerge-webrsync fail.
         echo 'ACCEPT_LICENSE="@FREE @BINARY-REDISTRIBUTABLE intel-ucode"'
         printf 'GENTOO_MIRRORS="%s"\n' "$MIRROR"
         [[ -n $VIDEO ]] && printf 'VIDEO_CARDS="%s"\n' "$VIDEO"
@@ -912,6 +914,7 @@ emerge_progress() {
 
 progress_update 41 "Syncing the Gentoo package tree (can take a while)"
 step "Syncing the Portage tree"
+mkdir -p /var/tmp/portage
 emerge-webrsync
 progress_update 44 "Gentoo package tree synchronized"
 
