@@ -1,7 +1,5 @@
 # Gentoo Installation Script
 
-**WARNING** Please do not use the main installer script, it will wipe your system, i am currently trying to fix it, please give me a day or to to fix it, for now use the copy with is 1.1.0
-
 An **unofficial**, open-source, interactive installer for [Gentoo Linux](https://www.gentoo.org/), in the spirit of `archinstall`.
 
 You answer a few questions (disk type, desktop environment, language, and so on). The script then partitions the disk, downloads the official stage3 tarball, verifies it, and installs a bootable Gentoo system.
@@ -208,6 +206,17 @@ You can also run individual scripts directly. Installer/helper scripts should be
 - Unattended installs from a config file.
 - More desktops and window managers (Sway, Hyprland, Cinnamon, MATE).
 - A complete Gentoo-native End-4/illogical-impulse dependency and service mapping.
+
+## Version history and known issues
+
+### Fixed in v0.2.4: install stopped at "Syncing the Portage tree"
+
+- **Affected versions:** v0.2.1, v0.2.2 and v0.2.3.
+- **What you saw:** the installer entered the chroot, then failed at the very first step with `mktemp: failed to create directory via template '/var/tmp/portage/...'`, followed by `Installation inside the chroot failed.`
+- **Cause:** the script wrote `PORTAGE_TMPDIR="/var/tmp/portage"` into `make.conf`. Portage's default is `/var/tmp`, and Portage adds `portage` to it by itself, so that value pointed at `/var/tmp/portage/portage`, a folder that does not exist on a fresh stage3. `emerge-webrsync` could not create its temporary folder and stopped.
+- **Fix:** v0.2.4 no longer sets `PORTAGE_TMPDIR`, and it creates `/var/tmp/portage` before the first sync.
+- **What happened to the old copy:** while this was being fixed, the older v0.1.1 script was kept in the repository as a temporary fallback, because it did not have this bug. It has been removed now that v0.2.4 is confirmed to work.
+- **If you hit this on an older version:** the installer always erases the disk you selected *before* this step, so a failed run leaves that disk partly set up. Download the current script and run it again from the live environment.
 
 ## Contributing
 
