@@ -610,7 +610,7 @@ emerge -q "${pkgs[@]}"
 if [[ $DE != none ]]; then
     step "Installing desktop environment: $DE"
     case $DE in
-        plasma) de_pkgs=(kde-plasma/plasma-meta kde-apps/dolphin kde-apps/konsole x11-misc/sddm) ;;
+        plasma) de_pkgs=(kde-plasma/plasma-meta kde-apps/dolphin kde-apps/konsole gui-apps/sddm) ;;
         gnome)  de_pkgs=(gnome-base/gnome-light gnome-base/gdm) ;;
         xfce)   de_pkgs=(x11-base/xorg-server xfce-base/xfce4-meta x11-terms/xfce4-terminal x11-misc/lightdm x11-misc/lightdm-gtk-greeter) ;;
         i3)     de_pkgs=(x11-base/xorg-server x11-wm/i3 x11-misc/i3status x11-misc/dmenu x11-terms/xterm x11-misc/lightdm x11-misc/lightdm-gtk-greeter) ;;
